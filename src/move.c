@@ -8,15 +8,19 @@
 
 #define MAX(a, b) (a > b ? a : b)
 #define DELAY  10000
-#define LIMIT  25
 
-/* Create Struct Point and Player */
-typedef struct Point{
+/* Create Struct Point Player and Difficulty */
+typedef struct Point {
     uint16_t x;
     uint16_t y;
 } Point;
 
-typedef struct Player{
+typedef struct Difficulty {
+    uint8_t diff;
+    uint8_t lim;
+} Difficulty;
+
+typedef struct Player {
     Point p;
     uint16_t win;
 } Player;
@@ -25,13 +29,13 @@ typedef struct Player{
 Point m = {0, 0}, c = {0, 0};
 Player p1 = {0, 1, 0}, p2 = {0, 1, 0};
 
-/* Timing Bot */
-uint8_t timing[3] = {12, 9, 6};
+/* Timing and Limit Bot */
+Difficulty timing[3] = {{12, 5}, {9, 10}, {6, 15}};
 
 /* Init Run While */
 bool run = true;
 
-/* Menu */
+/* Window Menu */
 uint8_t menu()
 {
     WINDOW *win;
@@ -152,7 +156,7 @@ void end_game(Point m, bool win)
 int main()
 {
     srand(time(0));
-    uint32_t score = 0, i = 0, diff = 0;
+    uint32_t score = 0, i = 0, choice = 0;
 
     /* Init Ncurses */
     initscr();
@@ -162,7 +166,7 @@ int main()
     curs_set(FALSE);
     nodelay(stdscr, true);
 
-    /* New Win */
+    /* New Window */
     WINDOW *win = newwin(0, 0, 0, 0);
 
     /* Border Window */
@@ -179,7 +183,7 @@ int main()
     new_point();
 
     /* Timing */
-    diff = menu();
+    choice = menu();
 
     while(run) {
         key_event();
@@ -195,7 +199,7 @@ int main()
         mvwaddch(win, c.y, c.x, 'x');
 
         /* Algorithm Bot Control */
-        if (i >= timing[diff]) {
+        if (i >= timing[choice].diff) {
             if (abs(p2.p.x-c.x) > abs(p2.p.y-c.y)) {
                 if (p2.p.x < c.x)
                     p2.p.x++;
@@ -237,9 +241,9 @@ int main()
         }
 
         /* Break Program */
-        if (p1.win >= LIMIT)
+        if (p1.win >= timing[choice].lim)
             end_game(m, 1);
-        if (p2.win >= LIMIT)
+        if (p2.win >= timing[choice].lim)
            end_game(m, 0);
 
         usleep(DELAY);
