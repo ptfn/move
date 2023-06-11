@@ -44,7 +44,6 @@ uint8_t menu()
     char list[3][5] = {"Easy", "Midd", "Hard"};
     char item[5];
         
-    initscr();
     getmaxyx(stdscr, yMax, xMax); 
     win = newwin(5, xMax/4, yMax/2-(5/2), xMax/2-(xMax/4)/2); 
     getmaxyx(win, yMaxW, xMaxW);
@@ -94,6 +93,38 @@ uint8_t menu()
     return i;    
 }
 
+void stop()
+{
+    WINDOW *win;
+    uint16_t ch, yMax, xMax;
+    bool run_stopping = true;
+    
+    getmaxyx(stdscr, yMax, xMax); 
+    win = newwin(5, xMax/6, yMax/2-(5/2), xMax/2-(xMax/4)/2); 
+    getmaxyx(win, yMax, xMax);
+    box(win, 0, 0);            
+    
+    wrefresh(win);
+    noecho();        
+
+    mvwprintw(win, 2, xMax/2-3, "%s", "STOPED");
+    
+    while (run_stopping) {
+        ch = wgetch(win);
+
+        switch (ch) {
+            case 's': case 'S':
+                run_stopping = false;
+                break;
+ 
+            default:
+                break;
+        }    
+    }
+    
+    delwin(win);
+}
+
 /* Player Controler */
 void key_event(void)
 {
@@ -122,6 +153,10 @@ void key_event(void)
 
         case 'q': case 'Q':
             run = false;
+            break;
+
+        case 's': case 'S':
+            stop();
             break;
         
         default:
