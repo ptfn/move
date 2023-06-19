@@ -36,7 +36,7 @@ Difficulty timing[3] = {{12, 5}, {9, 10}, {6, 15}};
 bool run = true;
 
 /* Window Menu */
-uint8_t menu()
+uint8_t menu(void)
 {
     WINDOW *win;
     uint16_t ch, yMax, xMax, yMaxW, xMaxW;
@@ -93,7 +93,8 @@ uint8_t menu()
     return i;    
 }
 
-void stop()
+/* Window Stop */
+void stop(void)
 {
     WINDOW *win;
     uint16_t ch, yMax, xMax;
@@ -165,6 +166,7 @@ void key_event(void)
     return;
 }
 
+/* Generate Location Point */
 void new_point(void)
 {
     while (1) {
@@ -175,6 +177,7 @@ void new_point(void)
     }
 }
 
+/* Displayint Result Game */
 void end_game(Point m, bool win)
 {
     clear();
@@ -188,33 +191,88 @@ void end_game(Point m, bool win)
     run = false;
 }
 
-int main()
+/* Algorithm Bot Control */
+void control_bot(void) 
 {
-    srand(time(0));
-    uint32_t score = 0, i = 0, choice = 0;
+    if (abs(p2.p.x-c.x) > abs(p2.p.y-c.y)) {
+        if (p2.p.x < c.x)
+            p2.p.x++;
+        else if (p2.p.x > c.x)
+            p2.p.x--;
+    } else {
+        if (p2.p.y < c.y)
+            p2.p.y++;
+        else if (p2.p.y > c.y)
+            p2.p.y--;
+    }
+}
 
-    /* Init Ncurses */
+/* Field Boundaries */
+void field_bound(void)
+{
+    if (p1.p.x < 1)
+        p1.p.x++;
+    else if (p1.p.x >= m.x-1)
+        p1.p.x--;
+        
+    if (p1.p.y < 2)
+        p1.p.y++;
+    else if (p1.p.y >= m.y-1)
+        p1.p.y--;
+}
+
+/* Generate Point */
+void generate_point(void)
+{
+    if (p1.p.x == c.x && p1.p.y == c.y) {
+        p1.win++;
+        new_point();
+    }
+    
+    if (p2.p.x == c.x && p2.p.y == c.y) {
+        p2.win++;
+        new_point();
+    }
+    
+    if (c.x >= m.x-1 || c.y >= m.y-1)
+        new_point();
+}
+
+/* Output Score and Players */
+void field_display(WINDOW *win)
+{
+    box(win, 0, 0);
+    mvwprintw(win, 0, 0,  "SCORE MY: %d BOT: %d", p1.win, p2.win);
+    mvwprintw(win, m.y-1, 0, "%dx%d", m.x, m.y);
+    mvwaddch(win, p1.p.y, p1.p.x, 'o');
+    mvwaddch(win, p2.p.y, p2.p.x, 'm');
+    mvwaddch(win, c.y, c.x, 'x');
+}
+
+/* Init Ncurses */
+void init(void)
+{
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
     noecho();
     curs_set(FALSE);
     nodelay(stdscr, true);
+}
 
-    /* New Window */
-    WINDOW *win = newwin(0, 0, 0, 0);
+int main(void)
+{
+    /* Init Ncurses */
+    init();
 
-    /* Border Window */
-    // uint8_t left, right, top, bottom, tlc, trc, blc, brc;
-    // left = right = '|';
-    // top = bottom = '-';
-    // tlc = brc = trc = blc = '+';
-
-    /* Choice Generate Bot */
+    /* Init Variables */
+    srand(time(0));
+    uint32_t score = 0, i = 0, choice = 0;
+    WINDOW *win = newwin(0, 0, 0, 0);    
+    
+    /* Choice Generate Bot and New Point*/
     getmaxyx(stdscr, m.y, m.x);
     p2.p.x = m.x-1;
-    
-    /* First Generation New Point */
     new_point();
 
     /* Timing */
@@ -222,58 +280,19 @@ int main()
 
     while(run) {
         key_event();
-        getmaxyx(win, m.y, m.x);
-        // wborder(win, left, right, top, bottom, tlc, trc, blc, brc);
-        box(win, 0, 0);
-        wprintw(win, "SCORE - MY: %d - BOT: %d ", p1.win, p2.win);
-        mvwprintw(win, m.y-1, 0, "%dx%d", m.x, m.y);
-  
-        /* Displaying Players and Dot */
-        mvwaddch(win, p1.p.y, p1.p.x, 'o');
-        mvwaddch(win, p2.p.y, p2.p.x, 'm');
-        mvwaddch(win, c.y, c.x, 'x');
+        getmaxyx(win, m.y, m.x);      
+        field_display(win);
 
-        /* Algorithm Bot Control */
+        /* Call Function Control Bot*/
         if (i >= timing[choice].diff) {
-            if (abs(p2.p.x-c.x) > abs(p2.p.y-c.y)) {
-                if (p2.p.x < c.x)
-                    p2.p.x++;
-                else if (p2.p.x > c.x)
-                    p2.p.x--;
-            } else {
-                if (p2.p.y < c.y)
-                    p2.p.y++;
-                else if (p2.p.y > c.y)
-                    p2.p.y--;
-            }
+            control_bot();
             i = 0;
-        } else {
+        } else
             i++;
-        }
 
-        /* Field Boundaries */
-        if (p1.p.x < 1)
-            p1.p.x++;
-        else if (p1.p.x >= m.x-1)
-            p1.p.x--;
-        
-        if (p1.p.y < 2)
-            p1.p.y++;
-        else if (p1.p.y >= m.y-1)
-            p1.p.y--;
-
-        /* Generation New Point */
-        if (p1.p.x == c.x && p1.p.y == c.y) {
-           p1.win++;
-           new_point();
-        }
-        if (p2.p.x == c.x && p2.p.y == c.y) {
-            p2.win++;
-            new_point();
-        }
-        if (c.x >= m.x-1 || c.y >= m.y-1) {
-            new_point();
-        }
+        /* Call Functions Field Boundaries and Generate Point*/
+        field_bound(); 
+        generate_point();
 
         /* Break Program */
         if (p1.win >= timing[choice].lim)
